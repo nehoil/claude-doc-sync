@@ -1,0 +1,21 @@
+{
+  "name": "setup-pre-commit-python",
+  "description": "Set up Python pre-commit hooks (ruff for lint + format, pyright for type-checking) using the pre-commit framework. Detects uv / poetry / pip and adapts the pyright entry accordingly.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Nehoray Ilani",
+    "email": "nehoray@helloflare.com"
+  },
+  "keywords": [
+    "python",
+    "pre-commit",
+    "ruff",
+    "pyright",
+    "linting",
+    "formatting",
+    "type-checking",
+    "uv",
+    "poetry"
+  ],
+  "license": "MIT"
+}
