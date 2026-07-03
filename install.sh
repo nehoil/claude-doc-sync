@@ -42,6 +42,7 @@ copy_if_missing .claude/hooks/doc-sync-lib.sh
 copy_if_missing .claude/skills/doc-sync/SKILL.md
 copy_if_missing .claude/skills/doc-sync/path-doc-map.md
 copy_if_missing .claude/skills/doc-sync/scripts/approve.sh
+copy_if_missing .claude/skills/doc-sync-init/SKILL.md
 
 SETTINGS="$TGT/.claude/settings.json"
 EXAMPLE="$SRC/settings.example.json"
@@ -69,10 +70,14 @@ cat <<EOF
 
 Done. Next steps:
 
-  1. Edit  .claude/skills/doc-sync/path-doc-map.md  — fill in the {{...}}
-     placeholders with this repo's actual docs + Linear settings.
-  2. Edit  .claude/skills/doc-sync/SKILL.md         — same; or leave the
-     {{...}} placeholders if you want Linear-side writes disabled.
+  1. (New/undocumented repo?) Run  /doc-sync-init  — it reads the codebase and
+     drafts README/CLAUDE/ARCHITECTURE/CONTEXT, then wires up path-doc-map.md
+     for you. Skips any doc that already exists. Then jump to step 3.
+
+     (Already documented?) Edit  .claude/skills/doc-sync/path-doc-map.md  by
+     hand — fill the {{...}} placeholders with this repo's docs + Linear settings.
+  2. Edit  .claude/skills/doc-sync/SKILL.md  — leave the {{...}} Linear
+     placeholders if you want Linear-side writes disabled.
   3. Restart Claude Code in this repo so the PreToolUse hook is picked up.
   4. Test:  stage a code change, ask Claude to commit. The gate should block
      and tell Claude to run the doc-sync skill.

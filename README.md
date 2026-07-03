@@ -22,11 +22,13 @@ itself into the skill.
 │   ├── doc-sync-gate.sh       # PreToolUse hook — blocks code commits w/o approval
 │   └── doc-sync-lib.sh        # shared marker helpers
 └── skills/
-    └── doc-sync/
-        ├── SKILL.md           # the skill Claude runs when the gate blocks
-        ├── path-doc-map.md    # per-repo: which docs each code path touches
-        └── scripts/
-            └── approve.sh     # marker writer (skill calls this when done)
+    ├── doc-sync/
+    │   ├── SKILL.md           # the skill Claude runs when the gate blocks
+    │   ├── path-doc-map.md    # per-repo: which docs each code path touches
+    │   └── scripts/
+    │       └── approve.sh     # marker writer (skill calls this when done)
+    └── doc-sync-init/
+        └── SKILL.md           # one-time: scaffold a doc baseline + wire path-doc-map
 settings.example.json          # snippet to merge into .claude/settings.json
 install.sh                     # one-shot installer
 tests/doc-sync/                # gate + lib tests
@@ -48,13 +50,39 @@ creates one). Idempotent — existing files are kept.
 Requires `jq` (the gate uses it at runtime; the installer uses it for the
 settings merge).
 
+## Init — scaffold a doc baseline
+
+The gate reconciles code against docs, but a fresh repo has no docs to sync
+against. Run the `doc-sync-init` skill once to bootstrap a **standard baseline**:
+
+```
+/doc-sync-init
+```
+
+It reads the codebase and writes real first drafts of four canonical docs — each
+with a distinct purpose:
+
+| Doc | Purpose |
+|-----|---------|
+| `README.md`       | what it is, install, how to run, contribute (humans) |
+| `CLAUDE.md`       | conventions, "read this first", gotchas (agents, every session) |
+| `ARCHITECTURE.md` | components, data flow, structure — how it's built |
+| `CONTEXT.md`      | domain glossary + key decisions (ADRs live in `docs/adr/`) |
+
+Then it fills in `path-doc-map.md` from the repo's real layout, so the gate has a
+meaningful map from day one. It **never clobbers** — any doc that already exists is
+left untouched — so it's safe to re-run to fill in only what's missing. Drafts are
+generated from the actual code (not empty templates), and it asks before writing
+if it can't tell what the repo does.
+
 ## Configure per repo
 
-After install, two files need editing:
+`doc-sync-init` writes `path-doc-map.md` for you. If you'd rather configure by
+hand (or tune what init produced), two files matter:
 
-1. **`.claude/skills/doc-sync/path-doc-map.md`** — fill in the `{{...}}`
-   placeholders: which docs are "always-on" for this repo, and which code paths
-   map to which docs. Also the Linear project / team / issue-key prefix.
+1. **`.claude/skills/doc-sync/path-doc-map.md`** — the `{{...}}` placeholders:
+   which docs are "always-on" for this repo, and which code paths map to which
+   docs. Also the Linear project / team / issue-key prefix.
 2. **`.claude/skills/doc-sync/SKILL.md`** — the same Linear placeholders are
    referenced here for the Linear lookup step. Leave them as `{{...}}` if you
    want the skill to skip Linear writes (it'll print intended actions instead).
