@@ -37,6 +37,9 @@ fi
 STAGED="$(git diff --cached --name-only 2>/dev/null || true)"
 [ -z "$STAGED" ] && allow
 
+# 4b. Docs-only changes have nothing to reconcile — allow without a marker.
+printf '%s\n' "$STAGED" | grep -qvE '\.md$' || allow
+
 # 5. Approved for this exact staged diff?
 MARKER="$(doc_sync_marker_path || true)"
 if [ -n "$MARKER" ] && [ -f "$MARKER" ] && [ "$(cat "$MARKER")" = "$(doc_sync_staged_hash)" ]; then
