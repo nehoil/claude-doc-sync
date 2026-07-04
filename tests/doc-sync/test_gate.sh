@@ -25,9 +25,10 @@ R="$(new_repo)"
 # 1. non-commit allowed
 check "non-commit allowed" allow "$(run_gate "$R" 'git status')"
 
-# 5. docs-only allowed
+# 5. docs-only is gated too (no marker) — .md is not auto-trusted; agent must
+#    reconcile via doc-sync (or set DOC_SYNC=0 for a docs-heavy session).
 ( cd "$R"; echo a > README.md; git add README.md )
-check "docs-only allowed" allow "$(run_gate "$R" 'git commit -m docs')"
+check "docs-only denied (no marker)" deny "$(run_gate "$R" 'git commit -m docs')"
 
 # 7. code change denied (no marker)
 ( cd "$R"; echo 'print(1)' > app.py; git add app.py )

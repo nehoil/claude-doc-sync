@@ -37,8 +37,12 @@ fi
 STAGED="$(git diff --cached --name-only 2>/dev/null || true)"
 [ -z "$STAGED" ] && allow
 
-# 4b. Docs-only changes have nothing to reconcile — allow without a marker.
-printf '%s\n' "$STAGED" | grep -qvE '\.md$' || allow
+# NOTE: .md changes are NOT auto-allowed. In LLM projects the .md files (skills,
+# prompts, docs) often ARE the deliverable, and a throwaway .md (scratch specs,
+# plans) should never be waved through unreviewed. Whether a given .md is
+# product, needs reconciling, or shouldn't ship at all is an agent judgment per
+# diff — so .md goes through the same gate as code. The agent decides via
+# doc-sync (writes the marker) or, for a docs-heavy session, DOC_SYNC=0.
 
 # 5. Approved for this exact staged diff?
 MARKER="$(doc_sync_marker_path || true)"
