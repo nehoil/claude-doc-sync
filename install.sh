@@ -2,8 +2,12 @@
 # Install claude-doc-sync into a target repo.
 #
 # Usage:
-#   ./install.sh                    # install into $PWD
+#   ./install.sh                    # install into $PWD (Claude gate only)
 #   ./install.sh /path/to/repo      # install into a specific repo
+#   ./install.sh --git-hook         # also install a real .git/hooks/pre-commit
+#                                    #   so HUMAN commits are gated too, not just
+#                                    #   Claude's. (Per-clone; git hooks aren't
+#                                    #   shared via the repo.)
 #
 # Idempotent: existing files are left untouched (re-running prints a status report).
 # Refuses to overwrite — to upgrade an existing install, delete the relevant
@@ -12,7 +16,17 @@
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TGT="${1:-$PWD}"
+
+TGT=""
+WITH_GIT_HOOK=0
+for a in "$@"; do
+  case "$a" in
+    --git-hook) WITH_GIT_HOOK=1 ;;
+    -*) echo "install.sh: unknown flag '$a'" >&2; exit 1 ;;
+    *) TGT="$a" ;;
+  esac
+done
+TGT="${TGT:-$PWD}"
 
 if [ ! -d "$TGT/.git" ]; then
   echo "install.sh: target '$TGT' is not a git repo (no .git/ dir). Aborting." >&2
@@ -39,6 +53,7 @@ echo "Installing claude-doc-sync into: $TGT"
 
 copy_if_missing .claude/hooks/doc-sync-gate.sh
 copy_if_missing .claude/hooks/doc-sync-lib.sh
+copy_if_missing .claude/hooks/doc-sync-pre-commit.sh
 copy_if_missing .claude/skills/doc-sync/SKILL.md
 copy_if_missing .claude/skills/doc-sync/path-doc-map.md
 copy_if_missing .claude/skills/doc-sync/scripts/approve.sh
@@ -63,6 +78,20 @@ else
     ' "$SETTINGS" > "$TMP"
     mv "$TMP" "$SETTINGS"
     echo "  merged:       .claude/settings.json (added doc-sync-gate PreToolUse hook)"
+  fi
+fi
+
+if [ "$WITH_GIT_HOOK" = "1" ]; then
+  HOOK="$TGT/.git/hooks/pre-commit"
+  SHIM='exec "$(git rev-parse --show-toplevel)/.claude/hooks/doc-sync-pre-commit.sh" "$@"'
+  if [ -e "$HOOK" ]; then
+    echo "  exists, kept: .git/hooks/pre-commit — add this line to it manually:"
+    echo "      $SHIM"
+  else
+    mkdir -p "$(dirname "$HOOK")"
+    printf '#!/usr/bin/env bash\n%s\n' "$SHIM" > "$HOOK"
+    chmod +x "$HOOK"
+    echo "  installed:    .git/hooks/pre-commit (gates human commits too)"
   fi
 fi
 
